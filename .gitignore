@@ -32,11 +32,8 @@ __pycache__/
 *$py.class
 *.so
 .Python
-
-# Python virtual environments
-.venv/
-venv/
 env/
+venv/
 ENV/
 
 # Other projects (exclude from this repo)
@@ -65,14 +62,3 @@ jspm_packages/
 
 # Optional REPL history
 .node_repl_history
-
-# Temporary files
-*.tmp
-*.temp
-
-# Lock files (optional - uncomment if you want to ignore them)
-# package-lock.json
-# yarn.lock
-
-# Only track source code from SIH project
-# This line ensures we only track the specific files we want
