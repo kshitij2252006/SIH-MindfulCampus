@@ -50,9 +50,16 @@
       },
     },
     build: {
-  target: 'esnext',
-  outDir: 'dist', 
-},
+      target: 'esnext',
+      outDir: 'dist',
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+        }
+      }
+    },
+    
+    publicDir: 'public',
 
     server: {
       port: 3000, 

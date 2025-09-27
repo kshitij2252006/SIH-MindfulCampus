@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { LoginPage } from "./components/LoginPage";
 import { Header } from "./components/Header";
 import { Navigation } from "./components/Navigation";
@@ -32,15 +33,38 @@ const themes = {
 };
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(true);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ username: string } | null>(null);
   const [isNavHidden, setIsNavHidden] = useState(false);
-  const [currentSection, setCurrentSection] = useState('home');
-  const [currentSubsection, setCurrentSubsection] = useState<string | undefined>();
   const [currentTheme, setCurrentTheme] = useState<keyof typeof themes>("Blue");
   const [isInitializing, setIsInitializing] = useState(false);
+  
+  // Get current section from URL
+  const getCurrentSection = () => {
+    const path = location.pathname;
+    if (path === '/' || path === '/home') return 'home';
+    if (path === '/breathing') return 'toolsMenu';
+    if (path === '/stress-busters') return 'toolsMenu';
+    if (path === '/mood-tracker') return 'moodMenu';
+    if (path === '/appointments') return 'appointmentMenu';
+    if (path === '/crisis-support') return 'helpMenu';
+    if (path === '/about') return 'about';
+    if (path === '/reminders') return 'reminders';
+    if (path === '/achievements') return 'achievements';
+    if (path === '/profile') return 'profile';
+    return 'home';
+  };
+  
+  const getCurrentSubsection = () => {
+    const path = location.pathname;
+    if (path === '/breathing') return 'breathing';
+    if (path === '/stress-busters') return 'stress';
+    return undefined;
+  };
 
   const handleMenuClick = useCallback(() => {
     setIsNavHidden(!isNavHidden);
@@ -54,13 +78,28 @@ export default function App() {
       return;
     }
     
-    setCurrentSection(section);
-    setCurrentSubsection(subsection);
+    // Navigate to the appropriate URL
+    let path = '/';
+    if (section === 'toolsMenu') {
+      if (subsection === 'breathing') path = '/breathing';
+      else if (subsection === 'stress') path = '/stress-busters';
+    } else if (section === 'moodMenu') {
+      path = '/mood-tracker';
+    } else if (section === 'appointmentMenu') {
+      path = '/appointments';
+    } else if (section === 'helpMenu') {
+      path = '/crisis-support';
+    } else if (section === 'about') {
+      path = '/about';
+    }
+    
+    navigate(path);
+    
     // Reset theme when leaving breathing exercise
     if (section !== 'toolsMenu' || subsection !== 'breathing') {
       setCurrentTheme("Blue");
     }
-  }, [isGuestMode, isLoggedIn]);
+  }, [isGuestMode, isLoggedIn, navigate]);
 
   const handleHeaderNavigate = useCallback((page: string) => {
     // Check if user is in guest mode and trying to access restricted features
@@ -70,10 +109,15 @@ export default function App() {
       return;
     }
     
-    setCurrentSection(page);
-    setCurrentSubsection(undefined);
+    // Navigate to the appropriate URL
+    let path = '/';
+    if (page === 'profile') path = '/profile';
+    else if (page === 'achievements') path = '/achievements';
+    else if (page === 'reminders') path = '/reminders';
+    
+    navigate(path);
     setCurrentTheme("Blue");
-  }, [isGuestMode, isLoggedIn]);
+  }, [isGuestMode, isLoggedIn, navigate]);
 
   const handleThemeChange = useCallback((theme: keyof typeof themes) => {
     setCurrentTheme(theme);
@@ -114,9 +158,8 @@ export default function App() {
     setIsLoggedIn(false);
     setIsGuestMode(false);
     setCurrentUser(null);
-    setCurrentSection('home');
-    setCurrentSubsection(undefined);
     setCurrentTheme("Blue");
+    navigate('/'); // Navigate to home on logout
     
     // Clear stored login state asynchronously
     setTimeout(() => {
@@ -127,10 +170,12 @@ export default function App() {
         console.warn('Failed to clear login state:', error);
       }
     }, 0);
-  }, []);
+  }, [navigate]);
 
   // Calculate main content class
   const getMainContentClass = () => {
+    const currentSection = getCurrentSection();
+    const currentSubsection = getCurrentSubsection();
     const isBreathing = currentSection === 'toolsMenu' && currentSubsection === 'breathing';
     const isHome = currentSection === 'home';
     
@@ -167,63 +212,12 @@ export default function App() {
     checkLoginState();
   }, []);
 
-  // Render current section component
-  const renderCurrentSection = () => {
-    // Early return for guest mode restrictions
-    if (isGuestMode && !isLoggedIn && currentSection !== 'home') {
-      return <HomePage onNavigate={handleNavigate} />;
-    }
 
-    switch (currentSection) {
-      case 'home':
-        return <HomePage onNavigate={handleNavigate} />;
-      
-      case 'toolsMenu':
-        switch (currentSubsection) {
-          case 'breathing':
-            return (
-              <BreathingExercise 
-                onThemeChange={handleThemeChange}
-                currentTheme={currentTheme}
-              />
-            );
-          case 'stress':
-            return <StressBusters />;
-          default:
-            return <HomePage onNavigate={handleNavigate} />;
-        }
-      
-      case 'moodMenu':
-        return <MoodTracker />;
-      
-      case 'appointmentMenu':
-        return <Appointment />;
-      
-      case 'helpMenu':
-        return <CrisisSupport />;
-      
-      case 'about':
-        return <About />;
-      
-      case 'reminders':
-        return <Reminders />;
-      
-      case 'achievements':
-        return <Achievements />;
-      
-      case 'profile':
-        return <Profile />;
-      
-      case 'extrasMenu':
-        return <HomePage onNavigate={handleNavigate} />;
-      
-      default:
-        return <HomePage onNavigate={handleNavigate} />;
-    }
-  };
 
   // Apply body class for theme changes
   useEffect(() => {
+    const currentSection = getCurrentSection();
+    const currentSubsection = getCurrentSubsection();
     let bodyClass = "";
     if (currentSection === 'toolsMenu' && currentSubsection === 'breathing') {
       bodyClass = themes[currentTheme].body;
@@ -234,7 +228,7 @@ export default function App() {
     }
     
     document.body.className = bodyClass;
-  }, [currentSection, currentSubsection, currentTheme]);
+  }, [location.pathname, currentTheme, getCurrentSection, getCurrentSubsection]);
 
   // Prevent background scrolling when modals are open
   useEffect(() => {
@@ -267,8 +261,8 @@ export default function App() {
         <Navigation 
           isHidden={isNavHidden}
           onNavigate={handleNavigate}
-          currentSection={currentSection}
-          currentSubsection={currentSubsection}
+          currentSection={getCurrentSection()}
+          currentSubsection={getCurrentSubsection()}
         />
 
         <main className={`pt-[8vh] min-h-[92vh] p-8 transition-all duration-500 ${
@@ -277,7 +271,26 @@ export default function App() {
             : 'w-[calc(100vw-22vw)] ml-[22vw]'
         } ${getMainContentClass()}`}>
           <div className="max-w-full overflow-y-auto">
-            {renderCurrentSection()}
+            <Routes>
+              <Route path="/" element={<HomePage onNavigate={handleNavigate} />} />
+              <Route path="/home" element={<HomePage onNavigate={handleNavigate} />} />
+              <Route path="/breathing" element={
+                <BreathingExercise 
+                  onThemeChange={handleThemeChange}
+                  currentTheme={currentTheme}
+                />
+              } />
+              <Route path="/stress-busters" element={<StressBusters />} />
+              <Route path="/mood-tracker" element={<MoodTracker />} />
+              <Route path="/appointments" element={<Appointment />} />
+              <Route path="/crisis-support" element={<CrisisSupport />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/reminders" element={<Reminders />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/profile" element={<Profile />} />
+              {/* Catch all route - redirect to home */}
+              <Route path="*" element={<HomePage onNavigate={handleNavigate} />} />
+            </Routes>
           </div>
         </main>
       </div>
