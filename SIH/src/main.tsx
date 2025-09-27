@@ -1,4 +1,5 @@
 
+// MindfulCampus React App with Router - Build v2
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";

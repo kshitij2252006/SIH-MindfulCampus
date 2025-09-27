@@ -4,6 +4,7 @@
   
 [build.environment]
   NODE_VERSION = "20"
+  NPM_VERSION = "10"
   CI = "false"
 
 # Handle client-side routing for React Router
