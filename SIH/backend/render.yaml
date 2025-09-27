@@ -1,0 +1,18 @@
+# Render.com deployment configuration
+# Use this for deploying on Render.com
+
+services:
+  - type: web
+    name: mindfulcampus-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 10000
